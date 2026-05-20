@@ -123,6 +123,12 @@ class WorkspaceListView extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   _buildActionButton(
+                    icon: Icons.delete_outline_rounded,
+                    color: Colors.redAccent.withOpacity(0.7),
+                    onPressed: () => _confirmDelete(context, workspace),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildActionButton(
                     icon: Icons.play_arrow_rounded,
                     color: displayColor,
                     onPressed: () => onLaunch(workspace),
@@ -154,6 +160,37 @@ class WorkspaceListView extends StatelessWidget {
           ),
           child: Icon(icon, color: color, size: 20),
         ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, Workspace workspace) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Workspace', style: TextStyle(color: AppColors.textPrimary)),
+        content: Text('Are you sure you want to remove "${workspace.name}"?', 
+          style: const TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              onDelete(workspace.id);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent.withOpacity(0.8),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
