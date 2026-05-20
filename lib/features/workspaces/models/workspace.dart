@@ -30,12 +30,13 @@ class Workspace {
   }
 
   Workspace copyWith({
+    String? id,
     String? name,
     List<String>? urls,
     String? color,
   }) {
     return Workspace(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
       urls: urls ?? this.urls,
       color: color ?? this.color,

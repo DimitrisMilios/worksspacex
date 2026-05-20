@@ -4,13 +4,18 @@
  */
 
 /**
- * Saves a string value to chrome.storage.local
+ * Saves a string value to chrome.storage.sync (Google Account Sync)
  */
 window.saveToStorage = function(key, value) {
     return new Promise((resolve, reject) => {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.set({ [key]: value }, () => {
+        const storage = (typeof chrome !== 'undefined' && chrome.storage)
+            ? (chrome.storage.sync || chrome.storage.local)
+            : null;
+
+        if (storage) {
+            storage.set({ [key]: value }, () => {
                 if (chrome.runtime.lastError) {
+                    console.error("Storage Save Error:", chrome.runtime.lastError);
                     reject(false);
                 } else {
                     resolve(true);
@@ -24,12 +29,16 @@ window.saveToStorage = function(key, value) {
 };
 
 /**
- * Retrieves a string value from chrome.storage.local
+ * Retrieves a string value from chrome.storage.sync
  */
 window.getFromStorage = function(key) {
     return new Promise((resolve) => {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.get([key], (result) => {
+        const storage = (typeof chrome !== 'undefined' && chrome.storage)
+            ? (chrome.storage.sync || chrome.storage.local)
+            : null;
+
+        if (storage) {
+            storage.get([key], (result) => {
                 resolve(result[key] || null);
             });
         } else {
@@ -45,17 +54,14 @@ window.launchUrls = async function(jsonUrls, groupName, groupColor, shouldCloseO
     const urls = JSON.parse(jsonUrls);
 
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-        // 1. Capture existing tabs to close them later if needed
         const existingTabs = await new Promise(r => chrome.tabs.query({ currentWindow: true }, r));
 
-        // 2. Create new tabs (KEEP THEM IN BACKGROUND so popup stays open)
         const tabIds = [];
         for (const url of urls) {
             const tab = await new Promise(r => chrome.tabs.create({ url, active: false }, r));
-            tabIds.add ? null : tabIds.push(tab.id);
+            tabIds.push(tab.id);
         }
 
-        // 3. Group the new tabs
         if (groupName && chrome.tabGroups) {
             const groupId = await new Promise(r => chrome.tabs.group({ tabIds: tabIds }, r));
             const updateOptions = { title: groupName };
@@ -63,13 +69,11 @@ window.launchUrls = async function(jsonUrls, groupName, groupColor, shouldCloseO
             await new Promise(r => chrome.tabGroups.update(groupId, updateOptions, r));
         }
 
-        // 4. Close old tabs if "Clean Switch" is on
         if (shouldCloseOthers) {
             const oldTabIds = existingTabs.map(t => t.id);
             chrome.tabs.remove(oldTabIds);
         }
 
-        // 5. Finally, focus the first new tab (this will close the popup)
         chrome.tabs.update(tabIds[0], { active: true });
         return true;
     } else {
@@ -99,5 +103,44 @@ window.getCurrentTabs = function() {
                 { url: 'https://flutter.dev', title: 'Flutter' }
             ]));
         }
+    });
+};
+
+/**
+ * Triggers a download of a JSON file
+ */
+window.downloadJson = function(fileName, jsonString) {
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
+/**
+ * Opens a file picker and returns the content of the selected JSON file
+ */
+window.pickJsonFile = function() {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                resolve(null);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                resolve(event.target.result);
+            };
+            reader.readAsText(file);
+        };
+        input.click();
     });
 };

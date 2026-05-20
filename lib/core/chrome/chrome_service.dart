@@ -32,4 +32,26 @@ class ChromeService {
       return [];
     }
   }
+
+  /// Triggers a JSON file download
+  Future<void> downloadWorkspaceJson(String fileName, String jsonString) async {
+    try {
+      js_util.callMethod(js_util.globalThis, 'downloadJson', [fileName, jsonString]);
+    } catch (e) {
+      print('Error downloading JSON: $e');
+    }
+  }
+
+  /// Opens file picker and returns file content
+  Future<String?> pickWorkspaceJson() async {
+    try {
+      final dynamic result = await js_util.promiseToFuture(
+        js_util.callMethod(js_util.globalThis, 'pickJsonFile', []),
+      );
+      return result as String?;
+    } catch (e) {
+      print('Error picking JSON file: $e');
+      return null;
+    }
+  }
 }

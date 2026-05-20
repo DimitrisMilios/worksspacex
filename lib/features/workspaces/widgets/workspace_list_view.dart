@@ -7,6 +7,7 @@ class WorkspaceListView extends StatelessWidget {
   final Function(String) onDelete;
   final Function(Workspace, bool) onLaunch;
   final Function(Workspace) onEdit;
+  final Function(Workspace) onShare;
 
   const WorkspaceListView({
     super.key,
@@ -14,6 +15,7 @@ class WorkspaceListView extends StatelessWidget {
     required this.onDelete,
     required this.onLaunch,
     required this.onEdit,
+    required this.onShare,
   });
 
   Color _getWorkspaceColor(String? colorName) {
@@ -128,6 +130,12 @@ class WorkspaceListView extends StatelessWidget {
                     children: [
                       Row(
                         children: [
+                          _buildActionButton(
+                            icon: Icons.share_rounded,
+                            color: AppColors.accent,
+                            onPressed: () => onShare(workspace),
+                          ),
+                          const SizedBox(width: 8),
                           _buildActionButton(
                             icon: Icons.edit_outlined,
                             color: AppColors.textSecondary,

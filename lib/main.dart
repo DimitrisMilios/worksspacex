@@ -89,6 +89,7 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
                           onLaunch: (workspace, cleanSwitch) => 
                               _workspaceProvider.launchWorkspace(workspace, cleanSwitch: cleanSwitch),
                           onEdit: (workspace) => _showEditWorkspaceDialog(context, workspace),
+                          onShare: _workspaceProvider.exportWorkspace,
                         ),
                 ),
               ],
@@ -199,6 +200,12 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
                         tooltip: 'Search',
                         onPressed: () => _isSearching.value = true,
                         icon: const Icon(Icons.search_rounded, 
+                          color: AppColors.textSecondary, size: 20),
+                      ),
+                      IconButton(
+                        tooltip: 'Import Workspace',
+                        onPressed: () => _workspaceProvider.importWorkspace(),
+                        icon: const Icon(Icons.file_download_outlined,
                           color: AppColors.textSecondary, size: 20),
                       ),
                       IconButton(

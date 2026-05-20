@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../../core/storage/storage_service.dart';
 import '../../../core/chrome/chrome_service.dart';
@@ -97,6 +99,38 @@ class WorkspaceProvider extends ChangeNotifier {
   Future<List<String>> getCurrentSessionUrls() async {
     final tabs = await _chromeService.getCurrentTabs();
     return tabs.map((t) => t['url']!).toList();
+  }
+
+  Future<void> exportWorkspace(Workspace workspace) async {
+    final jsonString = jsonEncode(workspace.toJson());
+    final fileName = '${workspace.name.replaceAll(' ', '_')}_workspace.json';
+    await _chromeService.downloadWorkspaceJson(fileName, jsonString);
+  }
+
+  Future<void> importWorkspace() async {
+    final jsonString = await _chromeService.pickWorkspaceJson();
+    if (jsonString != null) {
+      try {
+        final Map<String, dynamic> data = jsonDecode(jsonString);
+        final importedWorkspace = Workspace.fromJson(data);
+        
+        // Check if ID already exists, if so generate a new one
+        if (_workspaces.any((w) => w.id == importedWorkspace.id)) {
+          final newWorkspace = importedWorkspace.copyWith(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: '${importedWorkspace.name} (Imported)',
+          );
+          _workspaces.add(newWorkspace);
+        } else {
+          _workspaces.add(importedWorkspace);
+        }
+        
+        notifyListeners();
+        await _saveToStorage();
+      } catch (e) {
+        print('Error importing workspace: $e');
+      }
+    }
   }
 
   Future<void> _saveToStorage() async {
