@@ -75,11 +75,11 @@ class TabDietProvider extends ChangeNotifier {
     await _chromeService.saveTabDietSettings(_enabled, _idleMinutes);
   }
 
-  Future<bool> hibernateNow() async {
-    final success = await _chromeService.discardStaleTabsNow();
-    if (success) {
+  Future<int> hibernateNow() async {
+    final count = await _chromeService.discardStaleTabsNow();
+    if (count > 0) {
       await refreshStats();
     }
-    return success;
+    return count;
   }
 }

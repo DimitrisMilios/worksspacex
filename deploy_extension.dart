@@ -41,6 +41,12 @@ void main() async {
     await bridgeSrc.copy('extension/bridge.js');
   }
 
+  // Ensure background.js is present
+  final backgroundSrc = File('web/background.js');
+  if (await backgroundSrc.exists()) {
+    await backgroundSrc.copy('extension/background.js');
+  }
+
   // Copy custom icon if present
   final customIconSrc = File('assets/icon/icon.png');
   final customIconDestDir = Directory('extension/assets/icon');
@@ -98,10 +104,14 @@ void main() async {
       "128": "assets/icon/icon.png"
     }
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "permissions": [
     "tabs",
     "storage",
-    "tabGroups"
+    "tabGroups",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"

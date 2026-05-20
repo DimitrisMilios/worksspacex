@@ -233,12 +233,16 @@ window.discardStaleTabsNow = function() {
     return new Promise((resolve) => {
         if (typeof chrome !== 'undefined' && chrome.runtime) {
             chrome.runtime.sendMessage({ action: "check_and_discard_now" }, (response) => {
-                resolve(!!(response && response.success));
+                if (response && response.success) {
+                    resolve(response.count);
+                } else {
+                    resolve(-1);
+                }
             });
         } else {
             // Mock behavior
             setTimeout(() => {
-                resolve(true);
+                resolve(3);
             }, 800);
         }
     });

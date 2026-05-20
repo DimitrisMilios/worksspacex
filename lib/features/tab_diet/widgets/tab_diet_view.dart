@@ -348,19 +348,53 @@ class _TabDietViewState extends State<TabDietView> {
         onPressed: provider.enabled && !_isHibernating
             ? () async {
                 setState(() => _isHibernating = true);
-                final success = await provider.hibernateNow();
+                final count = await provider.hibernateNow();
                 if (mounted) {
                   setState(() => _isHibernating = false);
+                  
+                  String message;
+                  Color snackColor;
+                  if (count > 0) {
+                    message = 'Successfully hibernated $count stale tabs, freeing ~${count * 100} MB of RAM!';
+                    snackColor = AppColors.primary;
+                  } else if (count == 0) {
+                    message = 'No stale tabs matched your idle limit (all tabs are active/recent).';
+                    snackColor = AppColors.surface;
+                  } else {
+                    message = 'An error occurred while scanning tabs.';
+                    snackColor = Colors.redAccent;
+                  }
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        success 
-                          ? 'Stale tabs hibernated successfully!' 
-                          : 'No stale tabs matched the idle time limit.',
+                      content: Row(
+                        children: [
+                          Icon(
+                            count > 0 ? Icons.check_circle_rounded : (count == 0 ? Icons.info_outline : Icons.error_outline),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              message,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      backgroundColor: AppColors.surface,
+                      backgroundColor: snackColor,
                       behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
+                      margin: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(color: AppColors.border),
+                      ),
+                      duration: const Duration(seconds: 4),
                     ),
                   );
                 }

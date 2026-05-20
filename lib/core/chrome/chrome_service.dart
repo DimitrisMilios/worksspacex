@@ -101,15 +101,15 @@ class ChromeService {
   }
 
   /// Triggers a stale tab discard cycle immediately
-  Future<bool> discardStaleTabsNow() async {
+  Future<int> discardStaleTabsNow() async {
     try {
-      final bool success = await js_util.promiseToFuture(
+      final dynamic result = await js_util.promiseToFuture(
         js_util.callMethod(js_util.globalThis, 'discardStaleTabsNow', []),
       );
-      return success;
+      return result as int;
     } catch (e) {
       print('Error triggering tab discard: $e');
-      return false;
+      return -1;
     }
   }
 }
