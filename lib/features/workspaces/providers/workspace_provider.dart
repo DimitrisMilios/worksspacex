@@ -58,8 +58,13 @@ class WorkspaceProvider extends ChangeNotifier {
     await _saveToStorage();
   }
 
-  Future<void> launchWorkspace(Workspace workspace) async {
-    await _chromeService.launchWorkspace(workspace.name, workspace.urls, color: workspace.color);
+  Future<void> launchWorkspace(Workspace workspace, {bool cleanSwitch = false}) async {
+    await _chromeService.launchWorkspace(
+      workspace.name, 
+      workspace.urls, 
+      color: workspace.color,
+      shouldCloseOthers: cleanSwitch,
+    );
   }
 
   Future<List<String>> getCurrentSessionUrls() async {

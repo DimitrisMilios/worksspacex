@@ -73,7 +73,8 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
                       : WorkspaceListView(
                           workspaces: _workspaceProvider.workspaces,
                           onDelete: _workspaceProvider.deleteWorkspace,
-                          onLaunch: _workspaceProvider.launchWorkspace,
+                          onLaunch: (workspace, cleanSwitch) => 
+                              _workspaceProvider.launchWorkspace(workspace, cleanSwitch: cleanSwitch),
                           onEdit: (workspace) => _showEditWorkspaceDialog(context, workspace),
                         ),
                 ),

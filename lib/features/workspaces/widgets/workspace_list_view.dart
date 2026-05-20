@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 class WorkspaceListView extends StatelessWidget {
   final List<Workspace> workspaces;
   final Function(String) onDelete;
-  final Function(Workspace) onLaunch;
+  final Function(Workspace, bool) onLaunch;
   final Function(Workspace) onEdit;
 
   const WorkspaceListView({
@@ -43,7 +43,7 @@ class WorkspaceListView extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: InkWell(
-            onTap: () => onLaunch(workspace),
+            onTap: () => onLaunch(workspace, false),
             borderRadius: BorderRadius.circular(16),
             child: Container(
               decoration: BoxDecoration(
@@ -84,7 +84,24 @@ class WorkspaceListView extends StatelessWidget {
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _buildFaviconRow(workspace.urls),
+                            if (workspace.urls.length > 4) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                '+${workspace.urls.length - 4}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Container(
@@ -102,36 +119,45 @@ class WorkspaceListView extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${workspace.urls.length} resources',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  _buildActionButton(
-                    icon: Icons.edit_outlined,
-                    color: AppColors.textSecondary,
-                    onPressed: () => onEdit(workspace),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildActionButton(
-                    icon: Icons.delete_outline_rounded,
-                    color: Colors.redAccent.withOpacity(0.7),
-                    onPressed: () => _confirmDelete(context, workspace),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildActionButton(
-                    icon: Icons.play_arrow_rounded,
-                    color: displayColor,
-                    onPressed: () => onLaunch(workspace),
+                  Column(
+                    children: [
+                      Row(
+                        children: [
+                          _buildActionButton(
+                            icon: Icons.edit_outlined,
+                            color: AppColors.textSecondary,
+                            onPressed: () => onEdit(workspace),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildActionButton(
+                            icon: Icons.delete_outline_rounded,
+                            color: Colors.redAccent.withOpacity(0.7),
+                            onPressed: () => _confirmDelete(context, workspace),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          _buildActionButton(
+                            icon: Icons.published_with_changes_rounded,
+                            color: AppColors.accent,
+                            onPressed: () => onLaunch(workspace, true), // Clean Switch
+                          ),
+                          const SizedBox(width: 8),
+                          _buildActionButton(
+                            icon: Icons.play_arrow_rounded,
+                            color: displayColor,
+                            onPressed: () => onLaunch(workspace, false),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -140,6 +166,44 @@ class WorkspaceListView extends StatelessWidget {
         );
       },
     );
+  }
+
+  Widget _buildFaviconRow(List<String> urls) {
+    final displayUrls = urls.take(4).toList();
+    return Row(
+      children: displayUrls.map((url) {
+        final domain = _getDomain(url);
+        return Container(
+          margin: const EdgeInsets.only(right: 4),
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Image.network(
+              'https://www.google.com/s2/favicons?sz=64&domain=$domain',
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.language_rounded,
+                size: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _getDomain(String url) {
+    try {
+      return Uri.parse(url).host;
+    } catch (_) {
+      return '';
+    }
   }
 
   Widget _buildActionButton({

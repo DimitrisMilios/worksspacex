@@ -3,12 +3,13 @@ import 'dart:js_util' as js_util;
 
 /// Service for interacting with Chrome Extension APIs (Tabs, Windows, Groups)
 class ChromeService {
-  /// Launches a list of URLs and groups them under the workspace name
-  Future<void> launchWorkspace(String name, List<String> urls, {String? color}) async {
+  /// Launches a list of URLs and groups them under the workspace name.
+  /// If [shouldCloseOthers] is true, closes existing tabs in the window.
+  Future<void> launchWorkspace(String name, List<String> urls, {String? color, bool shouldCloseOthers = false}) async {
     try {
       final String jsonUrls = jsonEncode(urls);
       await js_util.promiseToFuture(
-        js_util.callMethod(js_util.globalThis, 'launchUrls', [jsonUrls, name, color]),
+        js_util.callMethod(js_util.globalThis, 'launchUrls', [jsonUrls, name, color, shouldCloseOthers]),
       );
     } catch (e) {
       print('Error launching workspace: $e');
