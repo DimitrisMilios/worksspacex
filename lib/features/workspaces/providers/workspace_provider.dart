@@ -7,6 +7,7 @@ class WorkspaceProvider extends ChangeNotifier {
   final StorageService _storageService = StorageService();
   final ChromeService _chromeService = ChromeService();
   List<Workspace> _workspaces = [];
+  List<String> _globalUrls = [];
   bool _isLoading = true;
   String _searchQuery = '';
 
@@ -19,6 +20,7 @@ class WorkspaceProvider extends ChangeNotifier {
     }).toList();
   }
 
+  List<String> get globalUrls => _globalUrls;
   bool get isLoading => _isLoading;
 
   void setSearchQuery(String query) {
@@ -34,11 +36,19 @@ class WorkspaceProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final data = await _storageService.getWorkspaces();
-    _workspaces = data.map((item) => Workspace.fromJson(item as Map<String, dynamic>)).toList();
+    final workspaceData = await _storageService.getWorkspaces();
+    _workspaces = workspaceData.map((item) => Workspace.fromJson(item as Map<String, dynamic>)).toList();
+    
+    _globalUrls = await _storageService.getGlobalUrls();
     
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> updateGlobalUrls(List<String> urls) async {
+    _globalUrls = urls;
+    notifyListeners();
+    await _storageService.saveGlobalUrls(urls);
   }
 
   Future<void> addWorkspace(String name, List<String> urls, {String? color}) async {
@@ -73,9 +83,12 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> launchWorkspace(Workspace workspace, {bool cleanSwitch = false}) async {
+    // Merge workspace URLs with global sticky URLs
+    final allUrls = [..._globalUrls, ...workspace.urls];
+    
     await _chromeService.launchWorkspace(
       workspace.name, 
-      workspace.urls, 
+      allUrls,
       color: workspace.color,
       shouldCloseOthers: cleanSwitch,
     );

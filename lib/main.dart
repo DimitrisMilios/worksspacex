@@ -3,6 +3,7 @@ import 'features/workspaces/providers/workspace_provider.dart';
 import 'features/workspaces/widgets/workspace_list_view.dart';
 import 'features/workspaces/widgets/add_workspace_dialog.dart';
 import 'core/theme/app_colors.dart';
+import 'features/workspaces/widgets/global_sticky_dialog.dart';
 import 'features/workspaces/models/workspace.dart';
 
 void main() {
@@ -201,6 +202,12 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
                           color: AppColors.textSecondary, size: 20),
                       ),
                       IconButton(
+                        tooltip: 'Global Sticky Tabs',
+                        onPressed: () => _showGlobalStickyDialog(context),
+                        icon: const Icon(Icons.push_pin_rounded, 
+                          color: AppColors.textSecondary, size: 20),
+                      ),
+                      IconButton(
                         tooltip: 'Capture Current Tabs',
                         onPressed: () => _handleCapture(context),
                         icon: const Icon(Icons.camera_enhance_rounded, 
@@ -211,6 +218,18 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
           ),
         );
       },
+    );
+  }
+
+  void _showGlobalStickyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => GlobalStickyDialog(
+        initialUrls: _workspaceProvider.globalUrls,
+        onSave: (urls) {
+          _workspaceProvider.updateGlobalUrls(urls);
+        },
+      ),
     );
   }
 

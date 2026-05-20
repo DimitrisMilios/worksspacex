@@ -4,13 +4,19 @@
  */
 
 /**
- * Saves a string value to chrome.storage.local
+ * Saves a string value to chrome.storage.sync (Google Account Sync)
  */
 window.saveToStorage = function(key, value) {
     return new Promise((resolve, reject) => {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.set({ [key]: value }, () => {
+        // Try chrome.storage.sync first for Google Account Sync
+        const storage = (typeof chrome !== 'undefined' && chrome.storage)
+            ? (chrome.storage.sync || chrome.storage.local)
+            : null;
+
+        if (storage) {
+            storage.set({ [key]: value }, () => {
                 if (chrome.runtime.lastError) {
+                    console.error("Storage Save Error:", chrome.runtime.lastError);
                     reject(false);
                 } else {
                     resolve(true);
@@ -24,12 +30,16 @@ window.saveToStorage = function(key, value) {
 };
 
 /**
- * Retrieves a string value from chrome.storage.local
+ * Retrieves a string value from chrome.storage.sync
  */
 window.getFromStorage = function(key) {
     return new Promise((resolve) => {
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.get([key], (result) => {
+        const storage = (typeof chrome !== 'undefined' && chrome.storage)
+            ? (chrome.storage.sync || chrome.storage.local)
+            : null;
+
+        if (storage) {
+            storage.get([key], (result) => {
                 resolve(result[key] || null);
             });
         } else {
