@@ -5,6 +5,8 @@ import 'features/workspaces/widgets/add_workspace_dialog.dart';
 import 'core/theme/app_colors.dart';
 import 'features/workspaces/widgets/global_sticky_dialog.dart';
 import 'features/workspaces/models/workspace.dart';
+import 'features/tab_diet/providers/tab_diet_provider.dart';
+import 'features/tab_diet/widgets/tab_diet_view.dart';
 
 void main() {
   runApp(const WorkSpaceXApp());
@@ -42,13 +44,16 @@ class ExtensionContainer extends StatefulWidget {
 
 class _ExtensionContainerState extends State<ExtensionContainer> {
   late final WorkspaceProvider _workspaceProvider;
+  late final TabDietProvider _tabDietProvider;
   final TextEditingController _searchController = TextEditingController();
   final ValueNotifier<bool> _isSearching = ValueNotifier<bool>(false);
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _workspaceProvider = WorkspaceProvider();
+    _tabDietProvider = TabDietProvider();
     _searchController.addListener(() {
       _workspaceProvider.setSearchQuery(_searchController.text);
     });
@@ -70,50 +75,100 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
         decoration: const BoxDecoration(
           color: AppColors.background,
         ),
-        child: ListenableBuilder(
-          listenable: _workspaceProvider,
-          builder: (context, _) {
-            if (_workspaceProvider.isLoading) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            }
+        child: IndexedStack(
+          index: _currentIndex,
+          children: [
+            // Workspaces Tab
+            ListenableBuilder(
+              listenable: _workspaceProvider,
+              builder: (context, _) {
+                if (_workspaceProvider.isLoading) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
 
-            return Column(
+                return Column(
+                  children: [
+                    _buildHeader(),
+                    Expanded(
+                      child: _workspaceProvider.workspaces.isEmpty
+                          ? _buildEmptyState()
+                          : WorkspaceListView(
+                              workspaces: _workspaceProvider.workspaces,
+                              onDelete: _workspaceProvider.deleteWorkspace,
+                              onLaunch: (workspace, cleanSwitch) => 
+                                  _workspaceProvider.launchWorkspace(workspace, cleanSwitch: cleanSwitch),
+                              onEdit: (workspace) => _showEditWorkspaceDialog(context, workspace),
+                              onShare: _workspaceProvider.exportWorkspace,
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            // Memory Diet Tab
+            Column(
               children: [
-                _buildHeader(),
+                _buildDietHeader(),
                 Expanded(
-                  child: _workspaceProvider.workspaces.isEmpty
-                      ? _buildEmptyState()
-                      : WorkspaceListView(
-                          workspaces: _workspaceProvider.workspaces,
-                          onDelete: _workspaceProvider.deleteWorkspace,
-                          onLaunch: (workspace, cleanSwitch) => 
-                              _workspaceProvider.launchWorkspace(workspace, cleanSwitch: cleanSwitch),
-                          onEdit: (workspace) => _showEditWorkspaceDialog(context, workspace),
-                          onShare: _workspaceProvider.exportWorkspace,
-                        ),
+                  child: TabDietView(provider: _tabDietProvider),
                 ),
               ],
-            );
-          },
-        ),
-      ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: FloatingActionButton(
-          onPressed: () => _showAddWorkspaceDialog(context),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: const Icon(Icons.add, color: AppColors.textPrimary),
+      ),
+      floatingActionButton: _currentIndex == 0
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                onPressed: () => _showAddWorkspaceDialog(context),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                child: const Icon(Icons.add, color: AppColors.textPrimary),
+              ),
+            )
+          : null,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppColors.border, width: 1),
+          ),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            if (index == 1) {
+              _tabDietProvider.refreshStats();
+            }
+          },
+          backgroundColor: AppColors.background,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textSecondary,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          unselectedLabelStyle: const TextStyle(fontSize: 11),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.auto_awesome_motion_rounded),
+              label: 'Workspaces',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bolt_rounded),
+              label: 'Memory Diet',
+            ),
+          ],
         ),
       ),
     );
@@ -225,6 +280,55 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDietHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          bottom: BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.bolt_rounded, 
+              color: AppColors.textPrimary, size: 22),
+          ),
+          const SizedBox(width: 14),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Memory Diet',
+                style: TextStyle(
+                  fontSize: 22, 
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Text(
+                'STALE TAB CLEANUP',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

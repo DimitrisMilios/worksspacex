@@ -144,3 +144,103 @@ window.pickJsonFile = function() {
         input.click();
     });
 };
+
+/**
+ * ============================================================================
+ * Tab Memory Diet (Stale Tab Auto-Discarder) JS APIs
+ * ============================================================================
+ */
+
+/**
+ * Gets Tab Diet settings. Returns JSON string of { enabled, idleMinutes }
+ */
+window.getTabDietSettings = function() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.get(["tab_diet_enabled", "tab_diet_idle_minutes"], (result) => {
+                resolve(JSON.stringify({
+                    enabled: result.tab_diet_enabled !== false, // default true
+                    idleMinutes: result.tab_diet_idle_minutes || 60 // default 1 hour (60 mins)
+                }));
+            });
+        } else {
+            // Mock data for local development/web preview
+            resolve(JSON.stringify({
+                enabled: localStorage.getItem('tab_diet_enabled') !== 'false',
+                idleMinutes: parseInt(localStorage.getItem('tab_diet_idle_minutes') || '60', 10)
+            }));
+        }
+    });
+};
+
+/**
+ * Saves Tab Diet settings
+ */
+window.saveTabDietSettings = function(enabled, idleMinutes) {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.storage) {
+            chrome.storage.local.set({
+                tab_diet_enabled: enabled,
+                tab_diet_idle_minutes: idleMinutes
+            }, () => {
+                resolve(true);
+            });
+        } else {
+            localStorage.setItem('tab_diet_enabled', enabled.toString());
+            localStorage.setItem('tab_diet_idle_minutes', idleMinutes.toString());
+            resolve(true);
+        }
+    });
+};
+
+/**
+ * Gets Open and Discarded/Sleeping Tab statistics.
+ * Returns JSON string: { total, sleeping, active, estimatedSavedMB }
+ */
+window.getTabStats = function() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+            chrome.tabs.query({}, (tabs) => {
+                const total = tabs.length;
+                const sleeping = tabs.filter(t => t.discarded).length;
+                const active = total - sleeping;
+                // Chrome tabs consume roughly ~100MB of RAM on average when active
+                const estimatedSavedMB = sleeping * 100; 
+                
+                resolve(JSON.stringify({
+                    total: total,
+                    sleeping: sleeping,
+                    active: active,
+                    estimatedSavedMB: estimatedSavedMB
+                }));
+            });
+        } else {
+            // Mock stats for dev web preview
+            resolve(JSON.stringify({
+                total: 18,
+                sleeping: 5,
+                active: 13,
+                estimatedSavedMB: 500
+            }));
+        }
+    });
+};
+
+/**
+ * Manually trigger stale tab discarding immediately
+ */
+window.discardStaleTabsNow = function() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.sendMessage({ action: "check_and_discard_now" }, (response) => {
+                resolve(!!(response && response.success));
+            });
+        } else {
+            // Mock behavior
+            setTimeout(() => {
+                resolve(true);
+            }, 800);
+        }
+    });
+};
+

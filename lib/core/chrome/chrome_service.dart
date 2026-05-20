@@ -55,4 +55,61 @@ class ChromeService {
       return null;
     }
   }
+
+  /// Gets Tab Memory Diet settings
+  Future<Map<String, dynamic>> getTabDietSettings() async {
+    try {
+      final String result = await js_util.promiseToFuture(
+        js_util.callMethod(js_util.globalThis, 'getTabDietSettings', []),
+      );
+      return Map<String, dynamic>.from(jsonDecode(result));
+    } catch (e) {
+      print('Error getting Tab Diet settings: $e');
+      return {'enabled': true, 'idleMinutes': 60};
+    }
+  }
+
+  /// Saves Tab Memory Diet settings
+  Future<bool> saveTabDietSettings(bool enabled, int idleMinutes) async {
+    try {
+      final bool success = await js_util.promiseToFuture(
+        js_util.callMethod(js_util.globalThis, 'saveTabDietSettings', [enabled, idleMinutes]),
+      );
+      return success;
+    } catch (e) {
+      print('Error saving Tab Diet settings: $e');
+      return false;
+    }
+  }
+
+  /// Gets open and sleeping tab statistics
+  Future<Map<String, dynamic>> getTabStats() async {
+    try {
+      final String result = await js_util.promiseToFuture(
+        js_util.callMethod(js_util.globalThis, 'getTabStats', []),
+      );
+      return Map<String, dynamic>.from(jsonDecode(result));
+    } catch (e) {
+      print('Error getting tab stats: $e');
+      return {
+        'total': 0,
+        'sleeping': 0,
+        'active': 0,
+        'estimatedSavedMB': 0,
+      };
+    }
+  }
+
+  /// Triggers a stale tab discard cycle immediately
+  Future<bool> discardStaleTabsNow() async {
+    try {
+      final bool success = await js_util.promiseToFuture(
+        js_util.callMethod(js_util.globalThis, 'discardStaleTabsNow', []),
+      );
+      return success;
+    } catch (e) {
+      print('Error triggering tab discard: $e');
+      return false;
+    }
+  }
 }
