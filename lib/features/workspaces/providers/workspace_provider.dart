@@ -8,9 +8,23 @@ class WorkspaceProvider extends ChangeNotifier {
   final ChromeService _chromeService = ChromeService();
   List<Workspace> _workspaces = [];
   bool _isLoading = true;
+  String _searchQuery = '';
 
-  List<Workspace> get workspaces => _workspaces;
+  List<Workspace> get workspaces {
+    if (_searchQuery.isEmpty) return _workspaces;
+    return _workspaces.where((w) {
+      final nameMatch = w.name.toLowerCase().contains(_searchQuery.toLowerCase());
+      final urlMatch = w.urls.any((u) => u.toLowerCase().contains(_searchQuery.toLowerCase()));
+      return nameMatch || urlMatch;
+    }).toList();
+  }
+
   bool get isLoading => _isLoading;
+
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
 
   WorkspaceProvider() {
     loadWorkspaces();

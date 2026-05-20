@@ -41,11 +41,23 @@ class ExtensionContainer extends StatefulWidget {
 
 class _ExtensionContainerState extends State<ExtensionContainer> {
   late final WorkspaceProvider _workspaceProvider;
+  final TextEditingController _searchController = TextEditingController();
+  final ValueNotifier<bool> _isSearching = ValueNotifier<bool>(false);
 
   @override
   void initState() {
     super.initState();
     _workspaceProvider = WorkspaceProvider();
+    _searchController.addListener(() {
+      _workspaceProvider.setSearchQuery(_searchController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _isSearching.dispose();
+    super.dispose();
   }
 
   @override
@@ -106,62 +118,105 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(10),
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isSearching,
+      builder: (context, isSearching, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            border: Border(
+              bottom: BorderSide(color: AppColors.border, width: 1),
             ),
-            child: const Icon(Icons.auto_awesome_motion_rounded, 
-              color: AppColors.textPrimary, size: 22),
           ),
-          const SizedBox(width: 14),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'WorkSpaceX',
-                style: TextStyle(
-                  fontSize: 22, 
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              Text(
-                'PREMIUM DASHBOARD',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: isSearching
+                ? Row(
+                    key: const ValueKey('searchMode'),
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: 'Search workspaces or URLs...',
+                            hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.4)),
+                            border: InputBorder.none,
+                            icon: const Icon(Icons.search, color: AppColors.primary, size: 20),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          _searchController.clear();
+                          _isSearching.value = false;
+                        },
+                        icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 20),
+                      ),
+                    ],
+                  )
+                : Row(
+                    key: const ValueKey('titleMode'),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.auto_awesome_motion_rounded, 
+                          color: AppColors.textPrimary, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'WorkSpaceX',
+                            style: TextStyle(
+                              fontSize: 22, 
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            'PREMIUM DASHBOARD',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: 'Search',
+                        onPressed: () => _isSearching.value = true,
+                        icon: const Icon(Icons.search_rounded, 
+                          color: AppColors.textSecondary, size: 20),
+                      ),
+                      IconButton(
+                        tooltip: 'Capture Current Tabs',
+                        onPressed: () => _handleCapture(context),
+                        icon: const Icon(Icons.camera_enhance_rounded, 
+                          color: AppColors.textSecondary, size: 20),
+                      ),
+                    ],
+                  ),
           ),
-          const Spacer(),
-          IconButton(
-            tooltip: 'Capture Current Tabs',
-            onPressed: () => _handleCapture(context),
-            icon: const Icon(Icons.camera_enhance_rounded, 
-              color: AppColors.textSecondary, size: 20),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildEmptyState() {
+    final isSearching = _searchController.text.isNotEmpty;
+    
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -175,49 +230,56 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.border),
               ),
-              child: const Icon(Icons.rocket_launch_rounded, size: 48, 
-                color: AppColors.textSecondary),
+              child: Icon(
+                isSearching ? Icons.search_off_rounded : Icons.rocket_launch_rounded, 
+                size: 48, 
+                color: AppColors.textSecondary
+              ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'No Workspaces Found',
-              style: TextStyle(
+            Text(
+              isSearching ? 'No Results Found' : 'No Workspaces Found',
+              style: const TextStyle(
                 color: AppColors.textPrimary, 
                 fontSize: 18, 
                 fontWeight: FontWeight.bold
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Capture your current session or create a new workspace to get started.',
+            Text(
+              isSearching 
+                ? 'Try searching for something else.'
+                : 'Capture your current session or create a new workspace to get started.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textSecondary, 
                 fontSize: 14,
                 height: 1.4,
               ),
             ),
-            const SizedBox(height: 32),
-            Container(
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ElevatedButton.icon(
-                onPressed: () => _showAddWorkspaceDialog(context),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('New Workspace'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: AppColors.textPrimary,
-                  shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            if (!isSearching) ...[
+              const SizedBox(height: 32),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () => _showAddWorkspaceDialog(context),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('New Workspace'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppColors.textPrimary,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
