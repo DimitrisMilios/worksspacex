@@ -55,9 +55,10 @@ window.getFromStorage = function(key) {
  * Launches a list of URLs in new tabs and optionally groups them
  * @param {string} jsonUrls - JSON string of URL list
  * @param {string} groupName - Name for the tab group
+ * @param {string} groupColor - Chrome color for the group
  * @returns {Promise<boolean>}
  */
-window.launchUrls = function(jsonUrls, groupName) {
+window.launchUrls = function(jsonUrls, groupName, groupColor) {
     return new Promise((resolve) => {
         const urls = JSON.parse(jsonUrls);
 
@@ -74,7 +75,11 @@ window.launchUrls = function(jsonUrls, groupName) {
                     if (createdCount === urls.length) {
                         if (groupName && chrome.tabGroups) {
                             chrome.tabs.group({ tabIds: tabIds }, (groupId) => {
-                                chrome.tabGroups.update(groupId, { title: groupName, color: 'purple' });
+                                const updateOptions = { title: groupName };
+                                if (groupColor) {
+                                    updateOptions.color = groupColor;
+                                }
+                                chrome.tabGroups.update(groupId, updateOptions);
                                 resolve(true);
                             });
                         } else {
@@ -87,6 +92,32 @@ window.launchUrls = function(jsonUrls, groupName) {
             // Fallback: Just open in new windows/tabs
             urls.forEach(url => window.open(url, '_blank'));
             resolve(true);
+        }
+    });
+};
+
+/**
+ * Gets all open tabs in the current window
+ * @returns {Promise<string>} - JSON string of {url: string, title: string}[]
+ */
+window.getCurrentTabs = function() {
+    return new Promise((resolve) => {
+        if (typeof chrome !== 'undefined' && chrome.tabs) {
+            chrome.tabs.query({ currentWindow: true }, (tabs) => {
+                const tabData = tabs
+                    .filter(tab => tab.url && !tab.url.startsWith('chrome://'))
+                    .map(tab => ({
+                        url: tab.url,
+                        title: tab.title
+                    }));
+                resolve(JSON.stringify(tabData));
+            });
+        } else {
+            // Fallback for local development
+            resolve(JSON.stringify([
+                { url: 'https://github.com', title: 'GitHub' },
+                { url: 'https://flutter.dev', title: 'Flutter' }
+            ]));
         }
     });
 };

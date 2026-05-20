@@ -27,15 +27,29 @@ class WorkspaceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addWorkspace(String name, List<String> urls) async {
+  Future<void> addWorkspace(String name, List<String> urls, {String? color}) async {
     final newWorkspace = Workspace(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
       urls: urls,
+      color: color,
     );
     _workspaces.add(newWorkspace);
     notifyListeners();
     await _saveToStorage();
+  }
+
+  Future<void> updateWorkspace(String id, String name, List<String> urls, {String? color}) async {
+    final index = _workspaces.indexWhere((w) => w.id == id);
+    if (index != -1) {
+      _workspaces[index] = _workspaces[index].copyWith(
+        name: name,
+        urls: urls,
+        color: color,
+      );
+      notifyListeners();
+      await _saveToStorage();
+    }
   }
 
   Future<void> deleteWorkspace(String id) async {
@@ -45,7 +59,12 @@ class WorkspaceProvider extends ChangeNotifier {
   }
 
   Future<void> launchWorkspace(Workspace workspace) async {
-    await _chromeService.launchWorkspace(workspace.name, workspace.urls);
+    await _chromeService.launchWorkspace(workspace.name, workspace.urls, color: workspace.color);
+  }
+
+  Future<List<String>> getCurrentSessionUrls() async {
+    final tabs = await _chromeService.getCurrentTabs();
+    return tabs.map((t) => t['url']!).toList();
   }
 
   Future<void> _saveToStorage() async {

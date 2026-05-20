@@ -26,3 +26,17 @@ WorkSpaceX allows developers to instantly launch grouped, environment-specific d
 // Correct Interop Template
 import 'package:js/js_util.dart' as js_util;
 js_util.callMethod(js_util.globalThis, 'jsFunctionName', [jsonEncodedString]);
+
+
+### 🎨 Brand Identity & UI Styling (WorkSpaceX Theme)
+The extension must use a premium, ultra-modern dark UI inspired by frosted-glass aesthetics, utilizing the following strict color palette:
+* **Background:** `Color(0xFF0A090D)` (Deep space black)
+* **Surface/Cards:** `Color(0xFF18151F)` with subtle borders (`Color(0xFF2D2838)`)
+* **Primary Interactive:** `Color(0xFFFF6B35)` (Vibrant Orange)
+* **Secondary/Environment Badge:** `Color(0xFFB5179E)` (Neon Magenta) and `Color(0xFFF7A23B)` (Honey Gold)
+* **Text Primary:** `Color(0xFFFFFFFF)` (Pure White) using a bold, wide sans-serif weight for major headers.
+* **Text Secondary:** `Color(0xFF9E9AA7)` (Muted Silver) for URLs and logs.
+
+#### UI Component Goals:
+* Card elements should feature a slight `borderRadius: BorderRadius.circular(16)`.
+* Incorporate soft gradients on background containers or call-to-action buttons using a `LinearGradient` blending the Orange and Neon Magenta colors.

@@ -1,0 +1,1 @@
+window.flutterConfiguration = { renderer: 'html' };

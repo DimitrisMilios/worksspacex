@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'features/workspaces/providers/workspace_provider.dart';
 import 'features/workspaces/widgets/workspace_list_view.dart';
 import 'features/workspaces/widgets/add_workspace_dialog.dart';
+import 'core/theme/app_colors.dart';
+import 'features/workspaces/models/workspace.dart';
 
 void main() {
   runApp(const WorkSpaceXApp());
@@ -17,12 +19,12 @@ class WorkSpaceXApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xff6200ee),
+        scaffoldBackgroundColor: AppColors.background,
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xff6200ee),
-          secondary: Color(0xff03dac6),
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          surface: AppColors.surface,
         ),
-        scaffoldBackgroundColor: const Color(0xff121212),
         useMaterial3: true,
       ),
       home: const ExtensionContainer(),
@@ -49,14 +51,17 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
+      body: Container(
         width: 400,
         height: 550,
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+        ),
         child: ListenableBuilder(
           listenable: _workspaceProvider,
           builder: (context, _) {
             if (_workspaceProvider.isLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
             }
 
             return Column(
@@ -69,6 +74,7 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
                           workspaces: _workspaceProvider.workspaces,
                           onDelete: _workspaceProvider.deleteWorkspace,
                           onLaunch: _workspaceProvider.launchWorkspace,
+                          onEdit: (workspace) => _showEditWorkspaceDialog(context, workspace),
                         ),
                 ),
               ],
@@ -76,9 +82,24 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddWorkspaceDialog(context),
-        child: const Icon(Icons.add),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => _showAddWorkspaceDialog(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: const Icon(Icons.add, color: AppColors.textPrimary),
+        ),
       ),
     );
   }
@@ -86,10 +107,10 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: BoxDecoration(
-        color: const Color(0xff121212),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
         border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
+          bottom: BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       child: Row(
@@ -97,11 +118,11 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xff6200ee).withOpacity(0.15),
+              gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.auto_awesome_motion_rounded, 
-              color: Color(0xff03dac6), size: 22),
+              color: AppColors.textPrimary, size: 22),
           ),
           const SizedBox(width: 14),
           const Column(
@@ -110,26 +131,29 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
               Text(
                 'WorkSpaceX',
                 style: TextStyle(
-                  fontSize: 20, 
+                  fontSize: 22, 
                   fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
                   letterSpacing: -0.5,
                 ),
               ),
               Text(
-                'Restoring Context Instantly',
+                'PREMIUM DASHBOARD',
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.white38,
-                  fontWeight: FontWeight.w500,
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
                 ),
               ),
             ],
           ),
           const Spacer(),
           IconButton(
-            onPressed: () {}, // Future settings
-            icon: Icon(Icons.tune_rounded, 
-              color: Colors.white.withOpacity(0.4), size: 20),
+            tooltip: 'Capture Current Tabs',
+            onPressed: () => _handleCapture(context),
+            icon: const Icon(Icons.camera_enhance_rounded, 
+              color: AppColors.textSecondary, size: 20),
           ),
         ],
       ),
@@ -146,42 +170,50 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.02),
+                color: AppColors.surface,
                 shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border),
               ),
-              child: Icon(Icons.workspaces_outline, size: 48, 
-                color: Colors.white.withOpacity(0.1)),
+              child: const Icon(Icons.rocket_launch_rounded, size: 48, 
+                color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
             const Text(
               'No Workspaces Found',
               style: TextStyle(
-                color: Colors.white, 
+                color: AppColors.textPrimary, 
                 fontSize: 18, 
                 fontWeight: FontWeight.bold
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Create a group of URLs to launch them all at once.',
+            const Text(
+              'Capture your current session or create a new workspace to get started.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.4), 
+                color: AppColors.textSecondary, 
                 fontSize: 14,
                 height: 1.4,
               ),
             ),
             const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => _showAddWorkspaceDialog(context),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('New Workspace'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff6200ee),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Container(
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () => _showAddWorkspaceDialog(context),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('New Workspace'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: AppColors.textPrimary,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -191,14 +223,49 @@ class _ExtensionContainerState extends State<ExtensionContainer> {
     );
   }
 
-  void _showAddWorkspaceDialog(BuildContext context) {
+  void _showAddWorkspaceDialog(BuildContext context, {String? name, List<String>? urls}) {
     showDialog(
       context: context,
       builder: (context) => AddWorkspaceDialog(
-        onAdd: (name, urls) {
-          _workspaceProvider.addWorkspace(name, urls);
+        initialName: name,
+        initialUrls: urls,
+        onSave: (name, urls, color) {
+          _workspaceProvider.addWorkspace(name, urls, color: color);
         },
       ),
     );
+  }
+
+  void _showEditWorkspaceDialog(BuildContext context, Workspace workspace) {
+    showDialog(
+      context: context,
+      builder: (context) => AddWorkspaceDialog(
+        isEditing: true,
+        initialName: workspace.name,
+        initialUrls: workspace.urls,
+        initialColor: workspace.color,
+        onSave: (name, urls, color) {
+          _workspaceProvider.updateWorkspace(workspace.id, name, urls, color: color);
+        },
+      ),
+    );
+  }
+
+  Future<void> _handleCapture(BuildContext context) async {
+    final urls = await _workspaceProvider.getCurrentSessionUrls();
+    if (!mounted) return;
+    
+    if (urls.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No active tabs found to capture.'),
+          backgroundColor: AppColors.surface,
+        ),
+      );
+      return;
+    }
+
+    final defaultName = 'Captured ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    _showAddWorkspaceDialog(context, name: defaultName, urls: urls);
   }
 }

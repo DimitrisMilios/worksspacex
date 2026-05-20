@@ -4,14 +4,31 @@ import 'dart:js_util' as js_util;
 /// Service for interacting with Chrome Extension APIs (Tabs, Windows, Groups)
 class ChromeService {
   /// Launches a list of URLs and groups them under the workspace name
-  Future<void> launchWorkspace(String name, List<String> urls) async {
+  Future<void> launchWorkspace(String name, List<String> urls, {String? color}) async {
     try {
       final String jsonUrls = jsonEncode(urls);
       await js_util.promiseToFuture(
-        js_util.callMethod(js_util.globalThis, 'launchUrls', [jsonUrls, name]),
+        js_util.callMethod(js_util.globalThis, 'launchUrls', [jsonUrls, name, color]),
       );
     } catch (e) {
       print('Error launching workspace: $e');
+    }
+  }
+
+  /// Queries all open tabs in the current window
+  Future<List<Map<String, String>>> getCurrentTabs() async {
+    try {
+      final String result = await js_util.promiseToFuture(
+        js_util.callMethod(js_util.globalThis, 'getCurrentTabs', []),
+      );
+      final List<dynamic> decoded = jsonDecode(result);
+      return decoded.map((item) => {
+        'url': item['url'] as String,
+        'title': item['title'] as String,
+      }).toList();
+    } catch (e) {
+      print('Error getting current tabs: $e');
+      return [];
     }
   }
 }

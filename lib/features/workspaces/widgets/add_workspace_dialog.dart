@@ -1,17 +1,53 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 
 class AddWorkspaceDialog extends StatefulWidget {
-  final Function(String, List<String>) onAdd;
+  final Function(String, List<String>, String?) onSave;
+  final String? initialName;
+  final List<String>? initialUrls;
+  final String? initialColor;
+  final bool isEditing;
 
-  const AddWorkspaceDialog({super.key, required this.onAdd});
+  const AddWorkspaceDialog({
+    super.key,
+    required this.onSave,
+    this.initialName,
+    this.initialUrls,
+    this.initialColor,
+    this.isEditing = false,
+  });
 
   @override
   State<AddWorkspaceDialog> createState() => _AddWorkspaceDialogState();
 }
 
 class _AddWorkspaceDialogState extends State<AddWorkspaceDialog> {
-  final _nameController = TextEditingController();
-  final _urlsController = TextEditingController();
+  late final TextEditingController _nameController;
+  late final TextEditingController _urlsController;
+  String? _selectedColor;
+
+  // Chrome Tab Group Colors
+  final List<Map<String, dynamic>> _chromeColors = [
+    {'name': 'Grey', 'color': Color(0xFF5F6368)},
+    {'name': 'Blue', 'color': Color(0xFF1A73E8)},
+    {'name': 'Red', 'color': Color(0xFFD93025)},
+    {'name': 'Yellow', 'color': Color(0xFFE37400)},
+    {'name': 'Green', 'color': Color(0xFF188038)},
+    {'name': 'Pink', 'color': Color(0xFFD01884)},
+    {'name': 'Purple', 'color': Color(0xFF9334E6)},
+    {'name': 'Cyan', 'color': Color(0xFF007B83)},
+    {'name': 'Orange', 'color': Color(0xFFFA903E)},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.initialName);
+    _urlsController = TextEditingController(
+      text: widget.initialUrls?.join('\n'),
+    );
+    _selectedColor = widget.initialColor ?? 'purple';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,65 +56,122 @@ class _AddWorkspaceDialogState extends State<AddWorkspaceDialog> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xff1e1e1e),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: AppColors.border),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Create Workspace',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _buildTextField(
-              controller: _nameController,
-              label: 'Workspace Name',
-              hint: 'e.g. WorkSpaceX Mobile',
-              icon: Icons.label_outline_rounded,
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _urlsController,
-              label: 'URLs (one per line)',
-              hint: 'https://github.com\nhttps://linear.app',
-              icon: Icons.link_rounded,
-              maxLines: 4,
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                widget.isEditing ? 'Edit Workspace' : 'New Workspace',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _handleSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff6200ee),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
+              ),
+              const SizedBox(height: 24),
+              _buildTextField(
+                controller: _nameController,
+                label: 'WORKSPACE NAME',
+                hint: 'e.g. Project Apollo',
+                icon: Icons.label_important_outline_rounded,
+                autofocus: true,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'GROUP COLOR',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.accent,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 40,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _chromeColors.length,
+                  itemBuilder: (context, index) {
+                    final colorData = _chromeColors[index];
+                    final colorKey = colorData['name'].toString().toLowerCase();
+                    final isSelected = _selectedColor == colorKey;
+
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedColor = colorKey),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 12),
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: colorData['color'] as Color,
+                          shape: BoxShape.circle,
+                          border: isSelected 
+                            ? Border.all(color: Colors.white, width: 2)
+                            : null,
+                          boxShadow: isSelected ? [
+                            BoxShadow(
+                              color: (colorData['color'] as Color).withOpacity(0.5),
+                              blurRadius: 8,
+                            )
+                          ] : null,
+                        ),
+                        child: isSelected 
+                          ? const Icon(Icons.check, size: 16, color: Colors.white)
+                          : null,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildTextField(
+                controller: _urlsController,
+                label: 'URL LIST (ONE PER LINE)',
+                hint: 'https://...',
+                icon: Icons.link_rounded,
+                maxLines: 4,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('CANCEL', 
+                      style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    child: ElevatedButton(
+                      onPressed: _handleSubmit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: AppColors.textPrimary,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(widget.isEditing ? 'UPDATE' : 'CREATE', 
+                        style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    ),
                   ),
-                  child: const Text('Create'),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -95,39 +188,35 @@ class _AddWorkspaceDialogState extends State<AddWorkspaceDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(icon, size: 16, color: const Color(0xff03dac6)),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white70,
-              ),
-            ),
-          ],
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: AppColors.accent,
+            letterSpacing: 1.2,
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         TextField(
           controller: controller,
           maxLines: maxLines,
           autofocus: autofocus,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
           decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
+            hintStyle: TextStyle(color: AppColors.textSecondary.withOpacity(0.3)),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.05),
+            fillColor: AppColors.background,
             contentPadding: const EdgeInsets.all(16),
-            border: OutlineInputBorder(
+            enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderSide: const BorderSide(color: AppColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xff6200ee), width: 1.5),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
             ),
           ),
         ),
@@ -144,7 +233,7 @@ class _AddWorkspaceDialogState extends State<AddWorkspaceDialog> {
         .toList();
 
     if (name.isNotEmpty && urls.isNotEmpty) {
-      widget.onAdd(name, urls);
+      widget.onSave(name, urls, _selectedColor);
       Navigator.pop(context);
     }
   }
